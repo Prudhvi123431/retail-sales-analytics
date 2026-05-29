@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retail Sales Dashboard – Prudhvi Raj Challa</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --accent: #4f8ef7;
+    --accent2: #34d399;
+    --accent3: #f97316;
+    --accent4: #a78bfa;
+    --red: #f43f5e;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --border: #2d3348;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #1a1d27 0%, #12162a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; letter-spacing:-0.5px; }
+  .logo span { color:var(--accent); }
+  .header-meta { font-size:12px; color:var(--muted); }
+  .header-meta strong { color:var(--accent2); }
+
+  /* TABS */
+  .tabs {
+    display: flex; gap: 4px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+  }
+  .tab {
+    padding: 14px 24px; cursor: pointer;
+    font-size:13px; font-weight:600; letter-spacing:0.3px;
+    color: var(--muted); border-bottom: 3px solid transparent;
+    transition: all 0.2s; user-select:none;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* PAGES */
+  .page { display:none; padding: 28px 32px; animation: fadeIn 0.3s ease; }
+  .page.active { display:block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* KPI CARDS */
+  .kpi-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:24px; }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); }
+  .kpi-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  }
+  .kpi-card.blue::before { background: var(--accent); }
+  .kpi-card.green::before { background: var(--accent2); }
+  .kpi-card.orange::before { background: var(--accent3); }
+  .kpi-card.purple::before { background: var(--accent4); }
+  .kpi-card.red::before { background: var(--red); }
+  .kpi-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .kpi-value { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; line-height:1; }
+  .kpi-card.blue .kpi-value { color:var(--accent); }
+  .kpi-card.green .kpi-value { color:var(--accent2); }
+  .kpi-card.orange .kpi-value { color:var(--accent3); }
+  .kpi-card.purple .kpi-value { color:var(--accent4); }
+  .kpi-card.red .kpi-value { color:var(--red); }
+  .kpi-sub { font-size:11px; color:var(--muted); margin-top:6px; }
+
+  /* CHART GRID */
+  .chart-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+  .chart-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-bottom:20px; }
+  .chart-full { margin-bottom:20px; }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .chart-title {
+    font-family:'Syne',sans-serif;
+    font-size:14px; font-weight:700;
+    margin-bottom:16px; color:var(--text);
+    display:flex; align-items:center; gap:8px;
+  }
+  .chart-title .dot {
+    width:8px; height:8px; border-radius:50%;
+  }
+  .chart-wrap { position:relative; }
+
+  /* TABLE */
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; padding:10px 12px; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid var(--border); }
+  td { padding:12px 12px; border-bottom:1px solid var(--border); }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background: var(--surface2); }
+  .badge {
+    display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600;
+  }
+  .badge.champions { background:rgba(52,211,153,0.15); color:var(--accent2); }
+  .badge.at-risk { background:rgba(249,115,22,0.15); color:var(--accent3); }
+  .badge.lost { background:rgba(244,63,94,0.15); color:var(--red); }
+
+  /* INSIGHTS */
+  .insights-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:20px; }
+  .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius:12px; padding:20px;
+    border-left: 4px solid;
+  }
+  .insight-card.positive { border-left-color: var(--accent2); }
+  .insight-card.warning { border-left-color: var(--accent3); }
+  .insight-card.negative { border-left-color: var(--red); }
+  .insight-title { font-weight:700; font-size:13px; margin-bottom:6px; }
+  .insight-text { font-size:12px; color:var(--muted); line-height:1.6; }
+
+  /* PAGE TITLE */
+  .page-title { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; margin-bottom:20px; }
+  .page-title span { color:var(--accent); }
+
+  /* FOOTER */
+  footer {
+    text-align:center; padding:20px;
+    font-size:12px; color:var(--muted);
+    border-top:1px solid var(--border);
+    margin-top:20px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Retail<span>Analytics</span></div>
+  <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--muted)">
+    Superstore Sales 2014–2017
+  </div>
+  <div class="header-meta">By <strong>Prudhvi Raj Challa</strong> &nbsp;|&nbsp; Data Analyst Portfolio Project</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showPage(0)">📊 Sales Overview</div>
+  <div class="tab" onclick="showPage(1)">📦 Product Analysis</div>
+  <div class="tab" onclick="showPage(2)">👥 Customer Segments</div>
+</div>
+
+<!-- PAGE 1: SALES OVERVIEW -->
+<div class="page active" id="page0">
+  <div class="page-title">Sales <span>Overview</span></div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value">$2.30M</div>
+      <div class="kpi-sub">Across 4 regions</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Total Profit</div>
+      <div class="kpi-value">$286K</div>
+      <div class="kpi-sub">Net profit earned</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Profit Margin</div>
+      <div class="kpi-value">12.5%</div>
+      <div class="kpi-sub">Overall margin</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Total Orders</div>
+      <div class="kpi-value">5,009</div>
+      <div class="kpi-sub">Unique orders</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Customers</div>
+      <div class="kpi-value">793</div>
+      <div class="kpi-sub">Unique customers</div>
+    </div>
+  </div>
+
+  <div class="chart-full chart-card">
+    <div class="chart-title"><div class="dot" style="background:var(--accent)"></div>Monthly Revenue Trend (2014–2017)</div>
+    <div class="chart-wrap" style="height:220px">
+      <canvas id="monthlyChart"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-title"><div class="dot" style="background:var(--accent2)"></div>Sales by Region</div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="regionChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><div class="dot" style="background:var(--accent3)"></div>Profit by Region</div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="regionProfitChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 2: PRODUCT ANALYSIS -->
+<div class="page" id="page1">
+  <div class="page-title">Product <span>Analysis</span></div>
+
+  <div class="chart-grid-3">
+    <div class="chart-card">
+      <div class="chart-title"><div class="dot" style="background:var(--accent)"></div>Sales by Category</div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="catSalesChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><div class="dot" style="background:var(--accent2)"></div>Profit by Category</div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="catProfitChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><div class="dot" style="background:var(--accent3)"></div>Category Breakdown</div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="catDonutChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-full chart-card">
+    <div class="chart-title"><div class="dot" style="background:var(--accent4)"></div>Profit by Sub-Category (Green = Profit | Red = Loss)</div>
+    <div class="chart-wrap" style="height:280px">
+      <canvas id="subCatChart"></canvas>
+    </div>
+  </div>
+
+  <div class="insights-grid">
+    <div class="insight-card positive">
+      <div class="insight-title">✅ Top Performer</div>
+      <div class="insight-text">Technology leads with $145K profit despite moderate sales volume. Copiers alone generate $55K profit.</div>
+    </div>
+    <div class="insight-card warning">
+      <div class="insight-title">⚠️ High Sales, Low Profit</div>
+      <div class="insight-text">Furniture generates $742K in sales but only $18K profit (2.5% margin). Review pricing strategy.</div>
+    </div>
+    <div class="insight-card negative">
+      <div class="insight-title">❌ Loss-Making Items</div>
+      <div class="insight-text">Tables (-$17.7K), Bookcases (-$3.5K), Supplies (-$1.2K) are losing money. Consider discontinuing or repricing.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3: CUSTOMER SEGMENTS -->
+<div class="page" id="page2">
+  <div class="page-title">Customer <span>Segments</span></div>
+
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-title"><div class="dot" style="background:var(--accent2)"></div>RFM Customer Segmentation</div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="rfmChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><div class="dot" style="background:var(--accent)"></div>Top 5 Customers by Revenue</div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="topCustChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:20px">
+    <div class="chart-title"><div class="dot" style="background:var(--accent4)"></div>Customer Segment Details</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Segment</th>
+          <th>Customers</th>
+          <th>% of Total</th>
+          <th>Strategy</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge champions">Champions</span></td>
+          <td><strong>189</strong></td>
+          <td>24%</td>
+          <td>Reward & retain — offer loyalty perks</td>
+        </tr>
+        <tr>
+          <td><span class="badge at-risk">At-Risk</span></td>
+          <td><strong>415</strong></td>
+          <td>52%</td>
+          <td>Re-engage with targeted offers & discounts</td>
+        </tr>
+        <tr>
+          <td><span class="badge lost">Lost</span></td>
+          <td><strong>189</strong></td>
+          <td>24%</td>
+          <td>Win-back campaigns with special promotions</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title"><div class="dot" style="background:var(--accent3)"></div>Top 5 Customers</div>
+    <table>
+      <thead>
+        <tr><th>Customer</th><th>Revenue</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Sean Miller</td><td><strong>$25,043</strong></td><td><span class="badge champions">Champion</span></td></tr>
+        <tr><td>Tamara Chand</td><td><strong>$19,052</strong></td><td><span class="badge champions">Champion</span></td></tr>
+        <tr><td>Raymond Buch</td><td><strong>$15,117</strong></td><td><span class="badge champions">Champion</span></td></tr>
+        <tr><td>Tom Ashbrook</td><td><strong>$14,596</strong></td><td><span class="badge at-risk">At-Risk</span></td></tr>
+        <tr><td>Adrian Barton</td><td><strong>$14,474</strong></td><td><span class="badge at-risk">At-Risk</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  Retail Sales & Customer Segmentation Analytics &nbsp;|&nbsp; Prudhvi Raj Challa &nbsp;|&nbsp;
+  Tools: Python, Pandas, NumPy, SQL, Matplotlib, Seaborn &nbsp;|&nbsp;
+  <a href="https://github.com/Prudhvi123431/retail-sales-analytics" style="color:var(--accent);text-decoration:none">GitHub Repository ↗</a>
+</footer>
+
+<script>
+const ACCENT  = '#4f8ef7';
+const GREEN   = '#34d399';
+const ORANGE  = '#f97316';
+const PURPLE  = '#a78bfa';
+const RED     = '#f43f5e';
+const MUTED   = '#64748b';
+const SURFACE = '#22263a';
+
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.font.family = 'DM Sans';
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+
+function showPage(i) {
+  document.querySelectorAll('.page').forEach((p,idx) => p.classList.toggle('active', idx===i));
+  document.querySelectorAll('.tab').forEach((t,idx) => t.classList.toggle('active', idx===i));
+}
+
+// Monthly Trend
+new Chart(document.getElementById('monthlyChart'), {
+  type:'line',
+  data:{
+    labels:["Jan'14","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec",
+            "Jan'15","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec",
+            "Jan'16","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec",
+            "Jan'17","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec'17"],
+    datasets:[{
+      label:'Monthly Sales',
+      data:[14236.9,4519.89,55691.01,28295.34,23648.29,34595.13,33946.39,27909.47,81777.35,31453.39,78628.72,69545.62,18174.08,11951.41,38726.25,34195.21,30131.69,24797.29,28765.32,36898.33,64595.92,31404.92,75972.56,74919.52,18542.49,22978.82,51715.88,38750.04,56987.73,40344.53,39261.96,31115.37,73410.02,59687.74,79411.97,96999.04,43971.37,20301.13,58872.35,36521.54,44261.11,52981.73,45264.42,63120.89,87866.65,77776.92,118447.82,83829.32],
+      borderColor: ACCENT,
+      backgroundColor: 'rgba(79,142,247,0.08)',
+      borderWidth:2, pointRadius:0, fill:true, tension:0.4
+    }]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{maxTicksLimit:12}},
+      y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'$'+Math.round(v/1000)+'K'}}
+    }
+  }
+});
+
+// Region Sales
+new Chart(document.getElementById('regionChart'), {
+  type:'bar',
+  data:{
+    labels:['West','East','Central','South'],
+    datasets:[{data:[725457.82,678781.24,501239.89,391721.9],
+      backgroundColor:[GREEN,'rgba(52,211,153,0.6)','rgba(52,211,153,0.4)','rgba(52,211,153,0.2)'],
+      borderRadius:6}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{display:false}},
+      y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'$'+Math.round(v/1000)+'K'}}
+    }
+  }
+});
+
+// Region Profit
+new Chart(document.getElementById('regionProfitChart'), {
+  type:'bar',
+  data:{
+    labels:['West','East','South','Central'],
+    datasets:[{data:[108418.45,91522.78,46749.43,39706.36],
+      backgroundColor:[ACCENT,'rgba(79,142,247,0.6)','rgba(79,142,247,0.4)','rgba(79,142,247,0.2)'],
+      borderRadius:6}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{display:false}},
+      y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'$'+Math.round(v/1000)+'K'}}
+    }
+  }
+});
+
+// Category Sales Bar
+new Chart(document.getElementById('catSalesChart'), {
+  type:'bar',
+  data:{
+    labels:['Technology','Furniture','Office Sup.'],
+    datasets:[{data:[836154.03,741999.8,719047.03],
+      backgroundColor:[ACCENT,PURPLE,ORANGE],borderRadius:6}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'$'+Math.round(v/1000)+'K'}}}
+  }
+});
+
+// Category Profit Bar
+new Chart(document.getElementById('catProfitChart'), {
+  type:'bar',
+  data:{
+    labels:['Technology','Office Sup.','Furniture'],
+    datasets:[{data:[145454.95,122490.8,18451.27],
+      backgroundColor:[GREEN,ACCENT,ORANGE],borderRadius:6}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'$'+Math.round(v/1000)+'K'}}}
+  }
+});
+
+// Category Donut
+new Chart(document.getElementById('catDonutChart'), {
+  type:'doughnut',
+  data:{
+    labels:['Technology','Furniture','Office Supplies'],
+    datasets:[{data:[836154.03,741999.8,719047.03],
+      backgroundColor:[ACCENT,PURPLE,GREEN],
+      borderWidth:0, hoverOffset:8}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+    plugins:{legend:{position:'bottom',labels:{padding:12}}}
+  }
+});
+
+// Sub-Category
+const subLabels=['Tables','Bookcases','Supplies','Fasteners','Machines','Labels','Art','Envelopes','Furnishings','Appliances','Storage','Chairs','Binders','Paper','Accessories','Phones','Copiers'];
+const subVals=[-17725.48,-3472.56,-1189.1,949.52,3384.76,5546.25,6527.79,6964.18,13059.14,18138.01,21278.83,26590.17,30221.76,34053.57,41936.64,44515.73,55617.82];
+new Chart(document.getElementById('subCatChart'), {
+  type:'bar',
+  data:{
+    labels:subLabels,
+    datasets:[{data:subVals,
+      backgroundColor:subVals.map(v=>v<0?'rgba(244,63,94,0.7)':'rgba(52,211,153,0.7)'),
+      borderRadius:4}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'$'+Math.round(v/1000)+'K'}},
+      y:{grid:{display:false},ticks:{font:{size:11}}}
+    }
+  }
+});
+
+// RFM Pie
+new Chart(document.getElementById('rfmChart'), {
+  type:'doughnut',
+  data:{
+    labels:['At-Risk (415)','Champions (189)','Lost (189)'],
+    datasets:[{data:[415,189,189],
+      backgroundColor:[ORANGE,GREEN,RED],
+      borderWidth:0,hoverOffset:10}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+    plugins:{legend:{position:'bottom',labels:{padding:16}}}
+  }
+});
+
+// Top Customers
+new Chart(document.getElementById('topCustChart'), {
+  type:'bar',
+  data:{
+    labels:['Sean Miller','Tamara Chand','Raymond Buch','Tom Ashbrook','Adrian Barton'],
+    datasets:[{data:[25043.05,19052.22,15117.34,14595.62,14473.57],
+      backgroundColor:[ACCENT,'rgba(79,142,247,0.8)','rgba(79,142,247,0.6)','rgba(79,142,247,0.4)','rgba(79,142,247,0.25)'],
+      borderRadius:6}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'$'+Math.round(v/1000)+'K'}},
+      y:{grid:{display:false}}
+    }
+  }
+});
+</script>
+</body>
+</html>
